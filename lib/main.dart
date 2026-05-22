@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/categories_screen.dart';
 import 'screens/stages_screen.dart';
 import 'screens/profile_setup_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +19,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       //home: const CategoriesScreen(),
       //home: const StagesScreen(),
-      home: const ProfileSetupScreen(),      
+      //home: const ProfileSetupScreen(),      
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'stage_detail_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'main_navigation_screen.dart';
+import 'package:flutter/cupertino.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -59,19 +62,37 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
             ),
 
-            Slider(
-              value: selectedWeek.toDouble(),
-              min: 1,
-              max: 40,
-              divisions: 39,
-              label: 'Semana $selectedWeek',
-              onChanged: (value) {
-                setState(() {
-                  selectedWeek = value.round();
-                });
-              },
+            Container(
+              height: 180,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1E7F8),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: CupertinoPicker(
+                scrollController: FixedExtentScrollController(
+                  initialItem: selectedWeek - 1,
+                ),
+                itemExtent: 50,
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    selectedWeek = index + 1;
+                  });
+                },
+                children: List.generate(
+                  40,
+                  (index) => Center(
+                    child: Text(
+                      'Semana ${index + 1}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-
+              
             const SizedBox(height: 16),
 
             Center(
@@ -89,13 +110,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final stageId = getStageIdFromWeek(selectedWeek);
 
-                  Navigator.push(
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setInt('selectedWeek', selectedWeek);
+
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => StageDetailScreen(
+                      builder: (context) => MainNavigationScreen(
                         stageId: stageId,
                         selectedWeek: selectedWeek,
                       ),

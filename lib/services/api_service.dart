@@ -5,6 +5,8 @@ import '../models/category.dart';
 import '../models/tip.dart';
 import '../models/stage.dart';
 import '../models/stage_details.dart';
+import '../models/baby_size_comparison.dart';
+import '../models/weekly_tip.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:3000';
@@ -71,6 +73,39 @@ class ApiService {
       return StageDetails.fromJson(data);
     } else {
       throw Exception('Error al cargar los detalles de la etapa');
+    }
+  }
+
+  static Future<List<BabySizeComparison>> fetchBabySizeComparison(int week) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/baby-size/$week'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+
+      return data
+          .map((item) => BabySizeComparison.fromJson(item))
+          .toList();
+    } else {
+      throw Exception(
+        'Error al cargar la comparación de tamaño',
+      );
+    }
+  }
+
+  static Future<WeeklyTip?> fetchWeeklyTip(int week) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/weekly-tip/$week'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return WeeklyTip.fromJson(data);
+    } else if (response.statusCode == 404) {
+      return null;
+    } else {
+      throw Exception('Error al cargar el consejo semanal');
     }
   }
 }

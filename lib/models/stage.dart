@@ -5,6 +5,8 @@ class Stage {
   final int endWeek;
   final String shortDescription;
   final String keyPoints;
+  final String? mediaType;
+  final String? mediaUrl;
   final int orderIndex;
 
   Stage({
@@ -14,6 +16,8 @@ class Stage {
     required this.endWeek,
     required this.shortDescription,
     required this.keyPoints,
+    this.mediaType,
+    this.mediaUrl,
     required this.orderIndex,
   });
 
@@ -25,6 +29,8 @@ class Stage {
       endWeek: json['end_week'],
       shortDescription: json['short_description'],
       keyPoints: json['key_points'],
+      mediaType: json['media_type'],
+      mediaUrl: json['media_url'],
       orderIndex: json['order_index'],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/stage.dart';
 import '../services/api_service.dart';
+import 'stage_detail_screen.dart';
 
 class StagesScreen extends StatefulWidget {
   const StagesScreen({super.key});
@@ -23,6 +24,7 @@ class _StagesScreenState extends State<StagesScreen> {
   Future<void> loadStages() async {
     try {
       final result = await ApiService.fetchStages();
+
       setState(() {
         stages = result;
         isLoading = false;
@@ -61,41 +63,70 @@ class _StagesScreenState extends State<StagesScreen> {
                     final stage = stages[index];
                     final points = splitKeyPoints(stage.keyPoints);
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              stage.name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(16),
+
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StageDetailScreen(
+                              stageId: stage.id,
+                              selectedWeek: stage.startWeek < 8 ? 8 : stage.startWeek,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Semana ${stage.startWeek} - ${stage.endWeek}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
+                          ),
+                        );
+                      },
+
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+                              Text(
+                                stage.name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(stage.shortDescription),
-                            const SizedBox(height: 12),
-                            ...points.map(
-                              (point) => Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Text(point),
+
+                              const SizedBox(height: 6),
+
+                              Text(
+                                'Semana ${stage.startWeek} - ${stage.endWeek}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
                               ),
-                            ),
-                          ],
+
+                              const SizedBox(height: 10),
+
+                              Text(stage.shortDescription),
+
+                              const SizedBox(height: 12),
+
+                              ...points.map(
+                                (point) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Text(point),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
