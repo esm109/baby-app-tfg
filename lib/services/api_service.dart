@@ -13,7 +13,8 @@ import '../models/hospital_bag_item.dart';
 
 class ApiService {
   //static const String baseUrl = 'http://localhost:3000';
-  static const String baseUrl = 'http://192.168.1.137:3000';
+  //static const String baseUrl = 'http://192.168.1.137:3000';
+  static const String baseUrl = 'http://192.168.0.180:3000';
   
   static Future<String> fetchMessage() async {
     final response = await http.get(

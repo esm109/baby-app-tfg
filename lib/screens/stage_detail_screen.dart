@@ -389,7 +389,7 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                                                   const SizedBox(height: 6),
 
                                                   Text(
-                                                    item.comparisonType.toUpperCase(),
+                                                    getCategoryName(item.comparisonType),
                                                     style: const TextStyle(
                                                       fontSize: 12,
                                                       letterSpacing: 1.5,
@@ -888,5 +888,18 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
   Future<void> saveChecklistItem(int id, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('checklist_$id', value);
+  }
+
+  String getCategoryName(String category) {
+    switch (category.toLowerCase()) {
+      case 'fruit':
+        return 'Fruta';
+      case 'animal':
+        return 'Animal';
+      case 'object':
+        return 'Objeto';
+      default:
+        return category;
+    }
   }
 }
