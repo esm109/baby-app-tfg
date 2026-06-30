@@ -13,11 +13,11 @@ import '../models/hospital_bag_item.dart';
 
 class ApiService {
   //static const String baseUrl = 'http://localhost:3000';
-  //static const String baseUrl = 'http://192.168.1.137:3000';    //Madrid
+  static const String baseUrl = 'http://192.168.1.137:3000';    //Madrid
   //static const String baseUrl = 'http://192.168.0.180:3000';    //cvc
   //static const String baseUrl = 'http://10.101.149.42:3000';    //Railway
 
-  static const String baseUrl = 'https://baby-app-tfg-production.up.railway.app';
+  //static const String baseUrl = 'https://baby-app-tfg-production.up.railway.app';
   
   static Future<String> fetchMessage() async {
     final response = await http.get(

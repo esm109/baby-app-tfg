@@ -8,6 +8,7 @@ import '../models/weekly_tip.dart';
 import '../models/checklist_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment.dart';
+import 'baby_3d_viewer_screen.dart';
 
 class StageDetailScreen extends StatefulWidget {
   final int stageId;
@@ -179,16 +180,39 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
       child: Column(
         children: [
           if (data.stage.mediaType == 'image')
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 500),
-              child: Image.asset(
-                data.stage.mediaUrl ?? '',
-                key: ValueKey(data.stage.mediaUrl),
-                height: 220,
-                fit: BoxFit.contain,
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const Baby3DViewerScreen(
+                      weekNumber: 20,
+                    ),
+                  ),
+                );
+              },
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 500),
+                child: Image.asset(
+                  data.stage.mediaUrl ?? '',
+                  key: ValueKey(data.stage.mediaUrl),
+                  height: 220,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
-
+            if (data.stage.mediaType == 'image')
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  'Toca la imagen para ver el bebé en 3D',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
           if (data.stage.mediaType == 'emoji')
             Text(
               data.stage.mediaUrl ?? '',
