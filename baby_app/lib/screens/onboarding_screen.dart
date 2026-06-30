@@ -33,11 +33,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const darkGreen = Color(0xFF6E7667);
-    const softGreen = Color(0xFFEAF1E8);
-    const lightGreen = Color(0xFFF8FAF7);
-    const textColor = Color(0xFF555B50);
-    const subtitleColor = Color(0xFF7C8277);
+    const darkGreen = Color(0xFF7C9A74);
+    const deepGreen = Color(0xFF5F7759);
+    const terracotta = Color(0xFFD6A28F);
+    const textColor = Color(0xFF4D4D46);
+    const subtitleColor = Color(0xFF72776D);
 
     return Scaffold(
       body: Container(
@@ -46,9 +46,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFFDF8F4),
-              Color(0xFFF8F5F0),
-              Color(0xFFF2F5EE),
+              Color(0xFFFFFBF7),
+              Color(0xFFF8F5EE),
+              Color(0xFFEEF7EA),
             ],
           ),
         ),
@@ -61,7 +61,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: 210,
                 height: 210,
                 decoration: BoxDecoration(
-                  color: darkGreen.withOpacity(0.07),
+                  color: terracotta.withOpacity(0.16),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -74,7 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: 250,
                 height: 250,
                 decoration: BoxDecoration(
-                  color: darkGreen.withOpacity(0.08),
+                  color: darkGreen.withOpacity(0.14),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -116,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   borderRadius: BorderRadius.circular(40),
                                   child: Image.asset(
                                     'assets/iconoBabyApp.png',
-                                    width: 170,
+                                    width: 190,
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -141,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 width: 45,
                                 height: 2,
                                 decoration: BoxDecoration(
-                                  color: darkGreen.withOpacity(0.28),
+                                  color: terracotta.withOpacity(0.75),
                                   borderRadius: BorderRadius.circular(100),
                                 ),
                               ),
@@ -176,7 +176,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         decoration: BoxDecoration(
                           color: currentPage == index
                               ? darkGreen
-                              : const Color(0xFFDCE3D7),
+                              : const Color(0xFFE4EBDD),
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
@@ -192,10 +192,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       height: 58,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: darkGreen,
+                          backgroundColor: deepGreen,
+                          shadowColor: deepGreen.withOpacity(0.32),
                           foregroundColor: Colors.white,
                           elevation: 8,
-                          shadowColor: darkGreen.withOpacity(0.35),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
