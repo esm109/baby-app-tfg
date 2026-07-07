@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/hospital_bag_item.dart';
 import '../services/api_service.dart';
-
+import '../widgets/app_menu_button.dart';
+import '../widgets/app_bottom_menu_bar.dart';
 class HospitalBagScreen extends StatefulWidget {
   final int selectedWeek;
 
@@ -210,6 +210,7 @@ class _HospitalBagScreenState extends State<HospitalBagScreen> {
             icon: const Icon(Icons.refresh),
             label: const Text('Restaurar'),
           ),
+          const AppMenuButton(),
         ],
       ),
 
@@ -385,6 +386,7 @@ class _HospitalBagScreenState extends State<HospitalBagScreen> {
                 ],
               ),
             ),
+            bottomNavigationBar: const AppBottomMenuBar(),
     );
   }
 

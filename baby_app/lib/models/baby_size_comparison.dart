@@ -21,14 +21,14 @@ class BabySizeComparison {
 
   factory BabySizeComparison.fromJson(Map<String, dynamic> json) {
     return BabySizeComparison(
-      id: json['id'],
-      weekNumber: json['week_number'],
-      comparisonType: json['comparison_type'],
-      title: json['title'],
-      emoji: json['emoji'],
-      description: json['description'],
-      sizeText: json['size_text'],
-      orderIndex: json['order_index'],
+      id: json['id'] ?? 0,
+      weekNumber: json['week_number'] ?? 0,
+      comparisonType: json['comparison_type']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      emoji: json['emoji']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      sizeText: json['size_text']?.toString() ?? json['title']?.toString() ?? '',
+      orderIndex: json['order_index'] ?? 0,
     );
   }
 }

@@ -3,16 +3,19 @@ import '../models/stage_details.dart';
 import '../services/api_service.dart';
 import 'profile_setup_screen.dart';
 import '../models/baby_size_comparison.dart';
-import 'stages_screen.dart';
 import '../models/weekly_tip.dart';
 import '../models/checklist_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment.dart';
 import 'baby_3d_viewer_screen.dart';
+import 'hospital_bag_screen.dart';
+import '../widgets/app_menu_button.dart';
+import 'dart:convert';
 
 class StageDetailScreen extends StatefulWidget {
   final int stageId;
   final int selectedWeek;
+
 
   const StageDetailScreen({
     super.key,
@@ -24,21 +27,64 @@ class StageDetailScreen extends StatefulWidget {
   State<StageDetailScreen> createState() => _StageDetailScreenState();
 }
 
+
 class _StageDetailScreenState extends State<StageDetailScreen> {
   StageDetails? details;
   List<BabySizeComparison> babySizes = [];
   List<ChecklistItem>? checklist;
   Map<int, bool> checkedTasks = {};
+  List<Map<String, dynamic>> editableChecklist = [];
   int currentBabySizePage = 0;
   WeeklyTip? weeklyTip;
   List<Appointment> appointments = [];
   bool isLoading = true;
   String errorMessage = '';
+  String userName = '';
+
+  String getBabyModelByImage(String? mediaUrl) {
+    if (mediaUrl?.contains('trimester_1') == true) {
+      return 'assets/models/baby_trimester_1.glb';
+    } else if (mediaUrl?.contains('trimester_2') == true) {
+      return 'assets/models/baby_trimester_2.glb';
+    } else {
+      return 'assets/models/baby_trimester_3.glb';
+    }
+  }
+
+  String getTrimesterTitleByImage(String? mediaUrl) {
+    if (mediaUrl?.contains('trimester_1') == true) {
+      return 'Primer trimestre';
+    } else if (mediaUrl?.contains('trimester_2') == true) {
+      return 'Segundo trimestre';
+    } else {
+      return 'Tercer trimestre';
+    }
+  }
+
+  int getWeekByImage(String? mediaUrl) {
+    if (mediaUrl?.contains('trimester_1') == true) {
+      return 8;
+    } else if (mediaUrl?.contains('trimester_2') == true) {
+      return 20;
+    } else {
+      return 32;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    loadUserName();
     loadDetails();
+  }
+
+  Future<void> loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedName = prefs.getString('user_name') ?? '';
+
+    setState(() {
+      userName = savedName;
+    });
   }
 
   Future<void> loadDetails() async {
@@ -57,16 +103,29 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
         widget.selectedWeek,
       );
 
+      final savedEditableChecklist = await loadSavedEditableChecklist();
+
       final appointmentsResult = await ApiService.fetchAppointments(
         widget.selectedWeek,
       );
+
+      final savedAppointments = await loadSavedAppointments();
 
       setState(() {
         details = result;
         babySizes = sizeResult;
         weeklyTip = weeklyTipResult;
         checklist = checklistResult;
-        appointments = appointmentsResult;
+
+        editableChecklist = savedEditableChecklist ?? checklistResult.map((item) {
+          return {
+            'id': item.id,
+            'task': item.task,
+            'source': 'app',
+          };
+        }).toList();
+
+        appointments = savedAppointments ?? appointmentsResult;
         isLoading = false;
       });
 
@@ -79,6 +138,49 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
       });
     }
   }
+
+  String get appointmentsStorageKey => 'custom_appointments';
+
+  Future<List<Appointment>?> loadSavedAppointments() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedData = prefs.getString(appointmentsStorageKey);
+
+    if (savedData == null) return null;
+
+    final decoded = jsonDecode(savedData) as List<dynamic>;
+
+    return decoded.map<Appointment>((item) {
+      final map = item as Map<String, dynamic>;
+
+      return Appointment(
+        id: map['id'],
+        weekNumber: map['weekNumber'],
+        title: map['title'],
+        description: map['description'],
+        appointmentType: map['appointmentType'] ?? 'personal',
+      );
+    }).toList();
+  }
+
+  Future<void> saveAppointments() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final data = appointments.map((item) {
+      return {
+        'id': item.id,
+        'weekNumber': item.weekNumber,
+        'title': item.title,
+        'description': item.description,
+        'appointmentType': item.appointmentType,
+      };
+    }).toList();
+
+    await prefs.setString(
+      appointmentsStorageKey,
+      jsonEncode(data),
+    );
+  }
+
   Widget buildSection({
     required String title,
     required IconData icon,
@@ -116,7 +218,6 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
     );
   }
 
-
   Widget buildExpandableItem({
     required String title,
     required String description,
@@ -151,29 +252,18 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
   }
 
   Widget buildHeader(StageDetails data) {
-    final progress = widget.selectedWeek / 40;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFF1E7F8),
-            Color(0xFFFFF1F7),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
+        color: const Color(0xFFF4EEFC),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.withOpacity(0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -185,8 +275,11 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const Baby3DViewerScreen(
-                      weekNumber: 20,
+                    builder: (_) => Baby3DViewerScreen(
+                      weekNumber: widget.selectedWeek,
+                      modelPath: getBabyModelByImage(data.stage.mediaUrl),
+                      trimesterTitle:
+                          getTrimesterTitleByImage(data.stage.mediaUrl),
                     ),
                   ),
                 );
@@ -196,40 +289,31 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                 child: Image.asset(
                   data.stage.mediaUrl ?? '',
                   key: ValueKey(data.stage.mediaUrl),
-                  height: 220,
+                  height: 240,
                   fit: BoxFit.contain,
                 ),
               ),
             ),
-            if (data.stage.mediaType == 'image')
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'Toca la imagen para ver el bebé en 3D',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                  ),
-                ),
-              ),
-          if (data.stage.mediaType == 'emoji')
-            Text(
-              data.stage.mediaUrl ?? '',
-              style: const TextStyle(fontSize: 70),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'Explora el bebé en 3D tocando la imagen',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.black54,
+              fontWeight: FontWeight.w500,
             ),
+          ),
 
-          const SizedBox(height: 18),
-
-          const SizedBox(height: 6),
+          const SizedBox(height: 20),
 
           Text(
-            data.stage.name,
-            textAlign: TextAlign.center,
+            getTrimesterTitleByImage(data.stage.mediaUrl),
             style: const TextStyle(
-              fontSize: 26,
+              fontSize: 30,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF4B3A54),
+              color: Color(0xFF363636),
             ),
           ),
 
@@ -238,31 +322,43 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: LinearProgressIndicator(
-              value: progress,
+              value: widget.selectedWeek / 40,
               minHeight: 10,
+              backgroundColor: const Color(0xFFE6DDF2),
+              valueColor: const AlwaysStoppedAnimation(
+                Color(0xFF8E6BD6),
+              ),
             ),
           ),
 
           const SizedBox(height: 10),
 
           Text(
-            '${(progress * 100).round()}% del embarazo completado',
+            '${((widget.selectedWeek / 40) * 100).round()}% del embarazo completado',
             style: const TextStyle(
+              fontWeight: FontWeight.w600,
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              color: Colors.black54,
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           Text(
-            data.stage.shortDescription,
+            data.stage.shortDescription ?? '',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 15,
-              height: 1.4,
+              color: Colors.black54,
+              height: 1.5,
             ),
           ),
+
+          if (data.stage.mediaType == 'emoji')
+            Text(
+              data.stage.mediaUrl ?? '',
+              style: const TextStyle(fontSize: 80),
+            ),
         ],
       ),
     );
@@ -285,16 +381,17 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
         centerTitle: true,
         backgroundColor: const Color(0xFFFCF7FD),
         elevation: 0,
-
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: TextButton.icon(
               onPressed: () {
-                Navigator.pushReplacement(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ProfileSetupScreen(),
+                    builder: (context) => const ProfileSetupScreen(
+                      isEditing: true,
+                    ),
                   ),
                 );
               },
@@ -302,9 +399,14 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
               label: const Text('Editar semana'),
             ),
           ),
+          const AppMenuButton(),
         ],
+
+
+
+
       ),
-      
+
       body: isLoading
         ? const Center(
             child: Column(
@@ -339,12 +441,16 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          buildWelcomeMessage(),
                           buildHeader(data),
 
                           if (babySizes.isNotEmpty)
                             Container(
                               width: double.infinity,
-                              margin: const EdgeInsets.only(bottom: 20),
+                              margin: const EdgeInsets.only(
+                                top: 20,
+                                bottom: 20,
+                              ),
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFFF4E8),
@@ -524,6 +630,52 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                                       height: 1.4,
                                     ),
                                   ),
+
+                                  const SizedBox(height: 18),
+
+                                  if (shouldShowHospitalBagLink()) ...[
+                                    const SizedBox(height: 18),
+
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => HospitalBagScreen(
+                                                selectedWeek: widget.selectedWeek,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.shopping_bag_outlined,
+                                          size: 20,
+                                        ),
+                                        label: const Text(
+                                          'Preparar bolsa',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                 ],
                               ),
                             ),
@@ -540,17 +692,25 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-
-                                  const Row(
+                                  Row(
                                     children: [
-                                      Icon(Icons.check_circle_outline),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Checklist semanal',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
+                                      const Icon(Icons.check_circle_outline),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          'Checklist semanal',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          await showChecklistForm();
+                                        },
+                                        icon: const Icon(Icons.add_circle_outline),
+                                        tooltip: 'Añadir tarea',
                                       ),
                                     ],
                                   ),
@@ -559,7 +719,7 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
 
                                   Builder(
                                     builder: (context) {
-                                      final total = checklist?.length ?? 0;
+                                      final total = editableChecklist.length;
                                       final completed = checkedTasks.values.where((value) => value).length;
                                       final progress = total > 0 ? completed / total : 0.0;
 
@@ -590,286 +750,83 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
                                     },
                                   ),
 
-                                  ...(checklist ?? []).map(
-                                    (item) => CheckboxListTile(
-                                      contentPadding: EdgeInsets.zero,
-
-                                      title: Text(item.task),
-
-                                      value: checkedTasks[item.id] ?? false,
-
-                                      onChanged: (value) async {
-                                        final newValue = value ?? false;
-
-                                        setState(() {
-                                          checkedTasks[item.id] = newValue;
-                                        });
-
-                                        await saveChecklistItem(item.id, newValue);
-                                      },
+                                  if (editableChecklist.isEmpty)
+                                    const Text(
+                                      'Todavía no hay tareas añadidas.',
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
 
-                            if (appointments.isNotEmpty)
-                              Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(bottom: 20),
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF0E8FF),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_month,
-                                          color: Color(0xFF8B6CCF),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Próximas citas',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
+                                  ...editableChecklist.asMap().entries.map(
+                                    (entry) {
+                                      final index = entry.key;
+                                      final item = entry.value;
 
-                                    ...appointments.map(
-                                      (item) => Card(
+                                      final id = item['id'] as int;
+                                      final task = item['task'] as String;
+
+                                      return Card(
                                         elevation: 0,
                                         color: Colors.white,
                                         margin: const EdgeInsets.only(bottom: 10),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(14),
                                         ),
-                                        child: ListTile(
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 8,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 4,
                                           ),
-                                          leading: CircleAvatar(
-                                            backgroundColor: const Color(0xFFDCCEFF),
-                                            child: Text(
-                                              '${item.weekNumber}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF5A3FA3),
+                                          child: Row(
+                                            children: [
+                                              Checkbox(
+                                                value: checkedTasks[id] ?? false,
+                                                onChanged: (value) async {
+                                                  final newValue = value ?? false;
+
+                                                  setState(() {
+                                                    checkedTasks[id] = newValue;
+                                                  });
+
+                                                  await saveChecklistItem(id, newValue);
+                                                },
                                               ),
-                                            ),
-                                          ),
-                                          title: Text(
-                                            item.title,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          trailing: const Icon(Icons.info_outline),
-                                          onTap: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) => AlertDialog(
-                                                title: Text(item.title),
-                                                content: Text(item.description),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: const Text('Cerrar'),
+
+                                              Expanded(
+                                                child: Text(
+                                                  task,
+                                                  style: TextStyle(
+                                                    decoration: checkedTasks[id] == true
+                                                        ? TextDecoration.lineThrough
+                                                        : null,
                                                   ),
-                                                ],
+                                                ),
                                               ),
-                                            );
-                                          },
+                                              IconButton(
+                                                icon: const Icon(Icons.edit_outlined),
+                                                onPressed: () async {
+                                                  await showChecklistForm(
+                                                    item: item,
+                                                    index: index,
+                                                  );
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.delete_outline),
+                                                onPressed: () {
+                                                  deleteChecklistTask(index);
+                                                },
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
-
-                          const SizedBox(height: 20),
-
-                          buildSection(
-                            title: 'Desarrollo del bebé',
-                            icon: Icons.child_care,
-                            children: data.babyDevelopment
-                                .map(
-                                  (item) => Card(
-                                    elevation: 0,
-                                    color: const Color(0xFFFFE8F2),
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 8,
-                                      ),
-                                      leading: const CircleAvatar(
-                                        backgroundColor: Color(0xFFFFB6D5),
-                                        child: Icon(Icons.child_care),
-                                      ),
-                                      title: Text(
-                                        item.title,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      trailing: const Icon(Icons.info_outline),
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: Text(item.title),
-                                            content: Text(item.description),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text('Cerrar'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                            
-                          buildSection(
-                            title: 'Cambios en la madre',
-                            icon: Icons.favorite_outline,
-                            children: data.motherChanges
-                                .map(
-                                  (item) => Card(
-                                    elevation: 0,
-                                    color: const Color(0xFFFFF0E6),
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 8,
-                                      ),
-                                      leading: const CircleAvatar(
-                                        backgroundColor: Color(0xFFFFC89A),
-                                        child: Icon(Icons.favorite),
-                                      ),
-                                      title: Text(
-                                        item.symptom,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      trailing: const Icon(Icons.info_outline),
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: Text(item.symptom),
-                                            content: Text(item.description),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text('Cerrar'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-
-                          buildSection(
-                            title: 'Recomendaciones',
-                            icon: Icons.lightbulb_outline,
-                            children: data.recommendations
-                                .map(
-                                  (item) => Card(
-                                    elevation: 0,
-                                    color: const Color(0xFFE8F8EE),
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 8,
-                                      ),
-                                      leading: const CircleAvatar(
-                                        backgroundColor: Color(0xFF9FE3B0),
-                                        child: Icon(Icons.lightbulb),
-                                      ),
-                                      title: Text(
-                                        item.category.isNotEmpty
-                                            ? item.category[0].toUpperCase() +
-                                                item.category.substring(1)
-                                            : '',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      trailing: const Icon(Icons.info_outline),
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: Text(item.category),
-                                            content: Text(item.recommendation),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text('Cerrar'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const StagesScreen(),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.calendar_month),
-                              label: const Text('Ver otros trimestres'),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -900,8 +857,9 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
 
     final savedChecks = <int, bool>{};
 
-    for (final item in checklist ?? []) {
-      savedChecks[item.id] = prefs.getBool('checklist_${item.id}') ?? false;
+    for (final item in editableChecklist) {
+      final id = item['id'] as int;
+      savedChecks[id] = prefs.getBool(checklistCheckKey(id)) ?? false;
     }
 
     setState(() {
@@ -911,7 +869,7 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
 
   Future<void> saveChecklistItem(int id, bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('checklist_$id', value);
+    await prefs.setBool(checklistCheckKey(id), value);
   }
 
   String getCategoryName(String category) {
@@ -925,5 +883,409 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
       default:
         return category;
     }
+  }
+
+  String normalizeText(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u');
+  }
+
+  bool shouldShowHospitalBagLink() {
+    if (weeklyTip == null) return false;
+
+    final text = normalizeText(
+      '${weeklyTip!.title} ${weeklyTip!.description}',
+    );
+
+    return text.contains('bolsa') &&
+        (text.contains('prepar') ||
+            text.contains('hospital') ||
+            text.contains('parto'));
+  }
+
+  Widget buildWelcomeMessage() {
+    final displayName = userName.trim().isEmpty ? 'mamá' : userName.trim();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1E7F8),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '¡Hola, $displayName! 👋',
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Estás en la semana ${widget.selectedWeek}. Tu bebé sigue creciendo cada día.',
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> showAppointmentForm({
+    Appointment? appointment,
+    int? index,
+  }) async {
+    final weekController = TextEditingController(
+      text: appointment?.weekNumber.toString() ?? widget.selectedWeek.toString(),
+    );
+
+    final titleController = TextEditingController(
+      text: appointment?.title ?? '',
+    );
+
+    final descriptionController = TextEditingController(
+      text: appointment?.description ?? '',
+    );
+
+    final result = await showDialog<Appointment>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            appointment == null ? 'Añadir cita' : 'Editar cita',
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  controller: weekController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Semana',
+                    hintText: 'Ej. 20',
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título',
+                    hintText: 'Ej. Ecografía morfológica',
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    hintText: 'Añade información sobre la cita',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final week = int.tryParse(weekController.text.trim());
+
+                if (week == null ||
+                    titleController.text.trim().isEmpty ||
+                    descriptionController.text.trim().isEmpty) {
+                  return;
+                }
+
+                Navigator.pop(
+                  context,
+                  Appointment(
+                    id: appointment?.id ?? DateTime.now().millisecondsSinceEpoch,
+                    weekNumber: week,
+                    title: titleController.text.trim(),
+                    description: descriptionController.text.trim(),
+                    appointmentType: appointment?.appointmentType ?? 'personal',
+                  ),
+                );
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      if (index == null) {
+        appointments.add(result);
+      } else {
+        appointments[index] = result;
+      }
+
+      appointments.sort(
+        (a, b) => a.weekNumber.compareTo(b.weekNumber),
+      );
+    });
+
+    await saveAppointments();
+  }
+
+  Future<void> deleteAppointment(int index) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Eliminar cita'),
+          content: const Text(
+            '¿Seguro que quieres eliminar esta cita?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      appointments.removeAt(index);
+    });
+
+    await saveAppointments();
+  }
+
+  bool isUserAppointment(Appointment appointment) {
+    return appointment.appointmentType == 'personal';
+  }
+
+  String getAppointmentLabel(Appointment appointment) {
+    return isUserAppointment(appointment)
+        ? 'Añadida por ti'
+        : 'Sugerida por la app';
+  }
+
+  Color getAppointmentLabelColor(Appointment appointment) {
+    return isUserAppointment(appointment)
+        ? const Color(0xFFE8F3FF)
+        : const Color(0xFFFFF4E8);
+  }
+
+  Color getAppointmentLabelTextColor(Appointment appointment) {
+    return isUserAppointment(appointment)
+        ? const Color(0xFF3F6FA3)
+        : const Color(0xFFB36B2C);
+  }
+
+  String get editableChecklistStorageKey => 'editable_checklist_week_${widget.selectedWeek}';
+
+  String checklistCheckKey(int id) {
+    return 'checklist_${widget.selectedWeek}_$id';
+  }
+
+  Future<List<Map<String, dynamic>>?> loadSavedEditableChecklist() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedData = prefs.getString(editableChecklistStorageKey);
+
+    if (savedData == null) return null;
+
+    final decoded = jsonDecode(savedData) as List<dynamic>;
+
+    return decoded.map<Map<String, dynamic>>((item) {
+      final map = item as Map<String, dynamic>;
+      return {
+        'id': map['id'] is int
+            ? map['id']
+            : int.tryParse(map['id'].toString()) ?? DateTime.now().millisecondsSinceEpoch,
+        'task': map['task']?.toString() ?? '',
+        'source': map['source']?.toString() ?? 'app',
+      };
+    }).toList();
+  }
+
+  Future<void> saveEditableChecklist() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final data = editableChecklist.map((item) {
+      return {
+        'id': item['id'],
+        'task': item['task'],
+        'source': item['source'] ?? 'app',
+      };
+    }).toList();
+
+    await prefs.setString(
+      editableChecklistStorageKey,
+      jsonEncode(data),
+    );
+  }
+
+ 
+
+
+
+
+
+  Future<void> showChecklistForm({
+    Map<String, dynamic>? item,
+    int? index,
+  }) async {
+    String taskText = item?['task']?.toString() ?? '';
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            item == null ? 'Añadir tarea' : 'Editar tarea',
+          ),
+          content: TextFormField(
+            initialValue: taskText,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Tarea',
+              hintText: 'Ej. Preparar documentación médica',
+            ),
+            onChanged: (value) {
+              taskText = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final task = taskText.trim();
+
+                if (task.isEmpty) return;
+
+                Navigator.of(dialogContext).pop(task);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    if (result == null || result.trim().isEmpty) return;
+
+    final newChecklist = List<Map<String, dynamic>>.from(editableChecklist);
+
+    if (index == null) {
+      newChecklist.add({
+        'id': DateTime.now().millisecondsSinceEpoch,
+        'task': result.trim(),
+        'source': 'personal',
+      });
+    } else {
+      newChecklist[index] = {
+        'id': newChecklist[index]['id'],
+        'task': result.trim(),
+        'source': newChecklist[index]['source'] ?? 'app',
+      };
+    }
+
+    setState(() {
+      editableChecklist = newChecklist;
+    });
+
+    await saveEditableChecklist();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Future<void> deleteChecklistTask(int index) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Eliminar tarea'),
+          content: const Text(
+            '¿Seguro que quieres eliminar esta tarea del checklist?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    final id = editableChecklist[index]['id'] as int;
+
+    setState(() {
+      editableChecklist.removeAt(index);
+      checkedTasks.remove(id);
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(checklistCheckKey(id));
+
+    await saveEditableChecklist();
   }
 }

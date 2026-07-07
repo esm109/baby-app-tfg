@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'stage_detail_screen.dart';
-import 'stages_screen.dart';
 import 'profile_screen.dart';
-import 'diary_screen.dart';
-import 'hospital_bag_screen.dart';
-import 'stats_screen.dart';
 import 'chat_screen.dart';
+import 'extra_info_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int stageId;
   final int selectedWeek;
+  final int initialIndex;
 
   const MainNavigationScreen({
     super.key,
     required this.stageId,
     required this.selectedWeek,
+    this.initialIndex = 0,
   });
 
   @override
@@ -22,7 +21,7 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int currentIndex = 0;
+  late int currentIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +30,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         stageId: widget.stageId,
         selectedWeek: widget.selectedWeek,
       ),
-      const DiaryScreen(),
-      HospitalBagScreen(selectedWeek: widget.selectedWeek,),
+      ExtraInfoScreen(stageId: widget.stageId, selectedWeek: widget.selectedWeek),
       ChatScreen(selectedWeek: widget.selectedWeek,),
-      StatsScreen(selectedWeek: widget.selectedWeek,),
-      const StagesScreen(),
       ProfileScreen(selectedWeek: widget.selectedWeek),
     ];
 
@@ -63,24 +59,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Diario',
+            icon: Icon(Icons.info_outline),
+            label: 'Más',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag),
-            label: 'Bolsa',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.smart_toy),
-            label: 'IA',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Estadísticas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: 'Trimestres',
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Guía',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -89,5 +73,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    currentIndex = widget.initialIndex;
   }
 }

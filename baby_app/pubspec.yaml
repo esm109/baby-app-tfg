@@ -37,6 +37,8 @@ flutter:
     - assets/images/
     - assets/models/
     - assets/iconoBabyApp.png
+    - assets/onboarding_2.png
+    - assets/onboarding_3.png
 
 flutter_native_splash:
   color: "#F7F5F2"

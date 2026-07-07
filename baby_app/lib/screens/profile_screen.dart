@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'profile_setup_screen.dart';
 import '../utils/pregnancy_calculator.dart';
+import 'stats_screen.dart';
+import '../widgets/app_menu_button.dart';
 
 class ProfileScreen extends StatefulWidget {
   final int selectedWeek;
@@ -36,38 +37,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> selectDueDate() async {
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: dueDate ?? DateTime.now().add(const Duration(days: 140)),
-      firstDate: DateTime.now().subtract(const Duration(days: 280)),
-      lastDate: DateTime.now().add(const Duration(days: 280)),
-    );
-
-    if (selected == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'due_date',
-      selected.toIso8601String(),
-    );
-
-    final calculatedWeek =
-    PregnancyCalculator.calculateWeekFromDueDate(
-      selected,
-    );
-
-    await prefs.setInt(
-      'selectedWeek',
-      calculatedWeek,
-    );
-
-    setState(() {
-      dueDate = selected;
-    });
-  }
-
   String getStageNameFromWeek(int week) {
     if (week >= 1 && week <= 12) return 'Primer trimestre';
     if (week >= 13 && week <= 28) return 'Segundo trimestre';
@@ -94,10 +63,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Mi perfil'),
         centerTitle: true,
+        actions: const [
+          AppMenuButton(),
+        ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Icon(
               Icons.pregnant_woman,
@@ -150,32 +123,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: selectDueDate,
-                icon: const Icon(Icons.event),
-                label: const Text('Editar fecha de parto'),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
                 onPressed: () {
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ProfileSetupScreen(),
+                      builder: (context) => const ProfileSetupScreen(
+                        isEditing: true,
+                      ),
                     ),
                   );
                 },
                 icon: const Icon(Icons.edit),
-                label: const Text('Cambiar semana manualmente'),
+                label: const Text('Editar datos'),
               ),
+            ),
+
+            const SizedBox(height: 32),
+
+            StatsContent(
+              selectedWeek: calculatedWeek,
             ),
           ],
         ),
       ),
+
+
+
+
     );
   }
 }

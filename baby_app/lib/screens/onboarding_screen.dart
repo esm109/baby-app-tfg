@@ -15,16 +15,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, String>> pages = [
     {
+      'image': 'assets/iconoBabyApp.png',
       'title': 'Growing Baby',
       'description':
           'Todo lo que necesitas para vivir tu embarazo semana a semana con tranquilidad.',
     },
     {
+      'image': 'assets/onboarding_2.png',
       'title': 'Descubre cómo crece',
       'description':
           'Consulta el desarrollo de tu bebé y compara su tamaño de forma visual y sencilla.',
     },
     {
+      'image': 'assets/onboarding_3.png',
       'title': 'Consejos para ti',
       'description':
           'Recibe recomendaciones adaptadas a tu etapa y guarda tu evolución personal.',
@@ -100,26 +103,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFDF8F4),
-                                  borderRadius: BorderRadius.circular(40),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: darkGreen.withOpacity(0.10),
-                                      blurRadius: 28,
-                                      offset: const Offset(0, 12),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(40),
-                                  child: Image.asset(
-                                    'assets/iconoBabyApp.png',
-                                    width: 190,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
+                              Image.asset(
+                                page['image']!,
+                                width: 200,
+                                fit: BoxFit.contain,
                               ),
 
                               const SizedBox(height: 44),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../widgets/app_menu_button.dart';
 
 class ChatScreen extends StatefulWidget {
   final int selectedWeek;
@@ -129,6 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.delete_outline),
             onPressed: clearChatHistory,
           ),
+          const AppMenuButton(),
         ],
       ),
       body: Column(
@@ -291,7 +293,7 @@ class _ChatScreenState extends State<ChatScreen> {
         messages = [
           ChatMessage(
             text:
-                'Hola 👋 Soy tu asistente de embarazo. Puedo orientarte sobre síntomas habituales, citas, bienestar y preparación. No sustituyo a un profesional sanitario.',
+                'Hola 👋 Soy tu guía durante el embarazo. Recuerda que no sustituyo a un profesional sanitario, pero puedo orientarte sobre síntomas habituales, citas, bienestar y preparación. ¿Qué quieres saber?',
             isUser: false,
           ),
         ];

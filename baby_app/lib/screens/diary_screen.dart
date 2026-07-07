@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/app_menu_button.dart';
+import '../widgets/app_bottom_menu_bar.dart';
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -75,8 +77,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now().toIso8601String().substring(0, 10);
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFFCF7FD),
       appBar: AppBar(
         title: const Text(
@@ -88,119 +92,132 @@ class _DiaryScreenState extends State<DiaryScreen> {
         centerTitle: true,
         backgroundColor: const Color(0xFFFCF7FD),
         elevation: 0,
+        actions: const [
+          AppMenuButton(),
+        ],
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              selectedDiaryDate == today
-                  ? '¿Cómo te encuentras hoy?'
-                  : 'Entrada del ${formatDate(selectedDiaryDate)}',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: SafeArea(
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              20 + MediaQuery.of(context).viewInsets.bottom,
             ),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              'Estado de ánimo',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: ['😊', '😌', '😐', '😢', '🤢'].map((mood) {
-                final isSelected = selectedMood == mood;
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedMood = mood;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFF1E7F8)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? Colors.purple
-                            : Colors.grey.shade300,
-                      ),
-                    ),
-                    child: Text(
-                      mood,
-                      style: const TextStyle(fontSize: 28),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: controller,
-              maxLines: 8,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                hintText: 'Escribe aquí tus pensamientos...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              Text(
+                selectedDiaryDate == today
+                    ? '¿Cómo te encuentras hoy?'
+                    : 'Entrada del ${formatDate(selectedDiaryDate)}',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: saveDiary,
-                icon: const Icon(Icons.save),
-                label: const Text('Guardar entrada'),
+              const Text(
+                'Estado de ánimo',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            TextButton.icon(
-              onPressed: goToToday,
-              icon: const Icon(Icons.today),
-              label: const Text('Volver a hoy'),
-            ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: ['😊', '😌', '😐', '😢', '🤢'].map((mood) {
+                  final isSelected = selectedMood == mood;
 
-            const SizedBox(height: 24),
-
-            const Text(
-              'Historial',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedMood = mood;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFF1E7F8)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? Colors.purple
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Text(
+                        mood,
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-            ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-            Expanded(
-              child: ListView(
+              TextField(
+                controller: controller,
+                maxLines: 8,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: 'Escribe aquí tus pensamientos...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: saveDiary,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Guardar entrada'),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              TextButton.icon(
+                onPressed: goToToday,
+                icon: const Icon(Icons.today),
+                label: const Text('Volver a hoy'),
+              ),
+
+              const SizedBox(height: 24),
+
+              const Text(
+                'Historial',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Column(
                 children: diaryKeys.map((key) {
                   final rawDate = key.replaceFirst('diary_', '');
                   final formattedDate = formatDate(rawDate);
@@ -242,7 +259,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                             content: Text(
                               text.isNotEmpty ? text : 'Sin contenido',
                             ),
-
                             actions: [
                               TextButton(
                                 onPressed: () {
@@ -250,7 +266,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                                 },
                                 child: const Text('Cerrar'),
                               ),
-
                               TextButton(
                                 onPressed: () async {
                                   await prefs.remove(key);
@@ -263,7 +278,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
                                 },
                                 child: const Text('Eliminar'),
                               ),
-
                               TextButton(
                                 onPressed: () {
                                   Navigator.pop(context);
@@ -284,10 +298,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   );
                 }).toList(),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    );
+    ),
+    bottomNavigationBar: isKeyboardOpen ? null : const AppBottomMenuBar(),
+  );        
   }
 }

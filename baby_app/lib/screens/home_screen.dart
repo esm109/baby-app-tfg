@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/app_menu_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,6 +32,9 @@ class State() {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Baby App'),
+        actions: const [
+          AppMenuButton(),
+        ],
       ),
       body: Center(
         child: Text(
