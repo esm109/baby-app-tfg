@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import '../widgets/app_menu_button.dart';
+import 'package:flutter/foundation.dart';
 
 class Baby3DViewerScreen extends StatelessWidget {
   const Baby3DViewerScreen({
@@ -13,6 +14,14 @@ class Baby3DViewerScreen extends StatelessWidget {
   final int weekNumber;
   final String modelPath;
   final String trimesterTitle;
+
+  String getResolvedModelPath() {
+    if (kIsWeb && modelPath.startsWith('assets/')) {
+      return 'assets/$modelPath';
+    }
+
+    return modelPath;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +136,7 @@ class Baby3DViewerScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   child: ModelViewer(
                     backgroundColor: const Color(0xFFFFEFE8),
-                    src: modelPath,
+                    src: getResolvedModelPath(),
                     alt: 'Modelo 3D del bebé',
                     cameraControls: true,
                     autoRotate: true,

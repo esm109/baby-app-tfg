@@ -10,15 +10,16 @@ import '../models/weekly_tip.dart';
 import '../models/checklist_item.dart';
 import '../models/appointment.dart';
 import '../models/hospital_bag_item.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 class ApiService {
   //static const String baseUrl = 'http://localhost:3000';
   //static const String baseUrl = 'http://192.168.1.137:3000';    //Madrid
-  static const String baseUrl = 'http://192.168.0.180:3000';    //cvc
+  //static const String baseUrl = 'http://192.168.0.180:3000';    //cvc
   //static const String baseUrl = 'http://10.101.149.42:3000';    //Railway
   //static const String baseUrl = 'http://10.101.148.186:3000';    //Ofi
 
-  //static const String baseUrl = 'https://baby-app-tfg-production.up.railway.app';
+  static const String baseUrl = 'https://baby-app-tfg-production.up.railway.app';
   
   static Future<String> fetchMessage() async {
     final response = await http.get(
@@ -181,27 +182,54 @@ class ApiService {
     );
   }
 
-  static Future<String> sendChatMessage({required String message, required int selectedWeek, String? mood, String? lastDiaryEntry, String? hospitalBagProgress,required List<Map<String, dynamic>> conversationHistory,}) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/chat'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'message': message,
-        'selectedWeek': selectedWeek,
-        'mood': mood,
-        'lastDiaryEntry': lastDiaryEntry,
-        'hospitalBagProgress': hospitalBagProgress,
-        'conversationHistory': conversationHistory,
-      }),
-    );
+  static Future<String> sendChatMessage({
+    required String message,
+    required int selectedWeek,
+    String? mood,
+    String? lastDiaryEntry,
+    String? hospitalBagProgress,
+    required List<Map<String, dynamic>> conversationHistory,
+  }) async {
+    final url = Uri.parse('$baseUrl/chat');
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['reply'] ?? 'No he podido generar una respuesta.';
+    final body = {
+      'message': message,
+      'selectedWeek': selectedWeek,
+      'mood': mood,
+      'lastDiaryEntry': lastDiaryEntry,
+      'hospitalBagProgress': hospitalBagProgress,
+      'conversationHistory': conversationHistory,
+    };
+
+    try {
+      debugPrint('URL CHAT: $url');
+      debugPrint('BODY ENVIADO: ${json.encode(body)}');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(body),
+      );
+
+      debugPrint('STATUS CHAT: ${response.statusCode}');
+      debugPrint('BODY CHAT: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        return data['reply']?.toString() ??
+            'No he podido generar una respuesta.';
+      }
+
+      throw Exception(
+        'Error HTTP ${response.statusCode}: ${response.body}',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('ERROR REAL EN sendChatMessage: $e');
+      debugPrint('STACKTRACE API: $stackTrace');
+      rethrow;
     }
-
-    throw Exception('Error al enviar mensaje al asistente');
   }
 }

@@ -98,7 +98,10 @@ class _ChatScreenState extends State<ChatScreen> {
         isLoading = false;
       });
       await saveChatHistory();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('ERROR EN CHATBOT: $e');
+      debugPrint('STACKTRACE: $stackTrace');
+      if (!mounted) return;
       setState(() {
         messages.add(
           ChatMessage(
