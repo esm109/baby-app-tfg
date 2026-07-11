@@ -579,37 +579,43 @@ app.post('/chat', async (req, res) => {
     conversationHistory
   } = req.body;
 
+  if (!message?.trim()) {
+    return res.status(400).json({
+      error: 'El mensaje no puede estar vacío',
+    });
+  }
+
   try {
+    const historyText = Array.isArray(conversationHistory)
+      ? conversationHistory
+          .map(
+            (m) =>
+              `${m.isUser ? 'Usuario' : 'Asistente'}: ${m.text}`
+          )
+          .join('\n')
+      : '';
     const prompt = `
-Eres un asistente virtual dentro de una app de embarazo.
+      Eres un asistente virtual dentro de una app de embarazo.
 
-Contexto de la usuaria:
-- Semana de embarazo: ${selectedWeek}
-- Estado de ánimo registrado: ${mood || 'No disponible'}
-- Última entrada del diario: ${lastDiaryEntry || 'No disponible'}
-- Progreso de bolsa hospitalaria: ${hospitalBagProgress || 'No disponible'}
+      Contexto de la usuaria:
+      - Semana de embarazo: ${selectedWeek ?? 'No disponible'}
+      - Estado de ánimo registrado: ${mood || 'No disponible'}
+      - Última entrada del diario: ${lastDiaryEntry || 'No disponible'}
+      - Progreso de bolsa hospitalaria: ${hospitalBagProgress || 'No disponible'}
 
-Instrucciones:
-- Responde siempre en español.
-- Usa un tono cercano, claro, tranquilizador y breve.
-- Personaliza la respuesta según la semana de embarazo y el contexto disponible.
-- No des diagnósticos médicos.
-- Si la usuaria menciona sangrado, dolor intenso, fiebre, pérdida de líquido, mareos fuertes, contracciones regulares o preocupación importante, recomienda consultar con un profesional sanitario.
+      Instrucciones:
+      - Responde siempre en español.
+      - Usa un tono cercano, claro, tranquilizador y breve.
+      - Personaliza la respuesta según la semana de embarazo y el contexto disponible.
+      - No des diagnósticos médicos.
+      - Si la usuaria menciona sangrado, dolor intenso, fiebre, pérdida de líquido, mareos fuertes, contracciones regulares o preocupación importante, recomienda consultar con un profesional sanitario.
 
-Historial reciente:
-${historyText}
+      Historial reciente:
+      ${historyText || 'Sin historial previo'}
 
-Pregunta de la usuaria:
-${message}
-`;
-
-    const historyText =
-      conversationHistory
-        ?.map(m =>
-          `${m.isUser ? 'Usuario' : 'Asistente'}: ${m.text}`
-        )
-        .join('\n') || '';
-
+      Pregunta de la usuaria:
+      ${message}
+    `;
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -620,6 +626,7 @@ ${message}
     });
   } catch (error) {
     console.error('Error en /chat:', error);
+
     res.status(500).json({
       error: 'Error al generar respuesta del asistente',
       details: error.message,
